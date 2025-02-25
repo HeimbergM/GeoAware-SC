@@ -1,0 +1,3 @@
+stride 14: torch.Size([1, 1, 768, 3600]) (4*15)² 60 patches
+stride 16: torch.Size([1, 1, 768, 2704]) (4*13)² 52 patches
+stride 8:

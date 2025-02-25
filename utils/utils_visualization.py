@@ -190,10 +190,10 @@ def save_visualization(thresholds, pair_idx, vis, save_path, category,
 
     if adapt_flip:
         img1_kps[~vis] = 0
-        fig, _ = draw_correspondences_lines(img1_kps[vis][:, [1, 0]], kps_1_to_2[vis][:, [1, 0]], img2_kps[vis][:, [1, 0]], img1, img2, tmp_threshold, transparency)
+        fig, _ = draw_correspondences_lines(img1_kps[vis][:, [1, 0]], kps_1_to_2[vis][:, [1, 0]], img2_kps[vis][:, [1, 0]], img1, img2, tmp_threshold, transparency=transparency)
         fig.savefig(os.path.join(category_path, f'{pair_idx}_pred_flip.png'))
     else:
-        fig, _ = draw_correspondences_lines(img1_kps[vis][:, [1, 0]], kps_1_to_2[vis][:, [1, 0]], img2_kps[vis][:, [1, 0]], img1, img2, tmp_threshold, transparency)
+        fig, _ = draw_correspondences_lines(img1_kps[vis][:, [1, 0]], kps_1_to_2[vis][:, [1, 0]], img2_kps[vis][:, [1, 0]], img1, img2, tmp_threshold, transparency=transparency)
         fig.savefig(os.path.join(category_path, f'{pair_idx}_pred.png'))
 
     fig_gt = draw_correspondences_gathered(img1_kps[vis][:, [1, 0]], img2_kps[vis][:, [1, 0]], img1, img2)

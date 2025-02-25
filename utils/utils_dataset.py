@@ -63,7 +63,8 @@ def load_and_prepare_data(args):
         subfolders = os.listdir(os.path.join(data_dir, 'ImageAnnotation'))
         categories = sorted([item for subfolder in subfolders for item in os.listdir(os.path.join(data_dir, 'ImageAnnotation', subfolder))])
     else:
-        data_dir = 'data/SPair-71k'
+        #data_dir = 'data/SPair-71k'
+        data_dir = '../sd-dino/data/SPair-71k'
         categories = sorted(os.listdir(os.path.join(data_dir, 'ImageAnnotation')))
 
     files, kps, cats, used_points_set, all_thresholds = ([] for _ in range(5))
@@ -118,8 +119,11 @@ def load_eval_data(args, path, category, split):
     elif args.EVAL_DATASET == 'pascal':
         files, kps, thresholds, used_kps = load_pascal_data(path, args.ANNO_SIZE, category, split, args.TEST_SAMPLE)
     else:
-        files, kps, thresholds, used_kps = load_spair_data(path, args.ANNO_SIZE, category, split, args.TEST_SAMPLE)
-
+        if args.DIVIDE_RESULTS:
+            files, kps, thresholds, used_kps, pairs = load_spair_data(path, args.ANNO_SIZE, category, split, args.TEST_SAMPLE, args.DIVIDE_RESULTS)
+            return files, kps, thresholds, used_kps, pairs
+        else:
+            files, kps, thresholds, used_kps = load_spair_data(path, args.ANNO_SIZE, category, split, args.TEST_SAMPLE)
     return files, kps, thresholds, used_kps
 
 def get_dataset_info(args, split):
@@ -144,7 +148,8 @@ def get_dataset_info(args, split):
             # remove category "king cheetah" from categories, since it is not present in the validation set
             categories.remove('king cheetah')
     else: # SPair
-        data_dir = 'data/SPair-71k'
+        #data_dir = 'data/SPair-71k'
+        data_dir = '/work/dlclarge1/heimberm-thesis/foundation_model__semantic_correspondences/data/SPair-71k'
         categories = sorted(os.listdir(os.path.join(data_dir, 'ImageAnnotation')))
 
     return data_dir, categories, split
@@ -208,7 +213,7 @@ def load_ap10k_data(path="data/ap-10k", size=840, category='cat', split='test', 
 
 # SPair-71K
 
-def load_spair_data(path="data/SPair-71k", size=256, category='cat', split='test', subsample=None):
+def load_spair_data(path="data/SPair-71k", size=256, category='cat', split='test', subsample=None, return_pair_anno=False):
     np.random.seed(42)
     pairs = sorted(glob(f'{path}/PairAnnotation/{split}/*:{category}.json'))
     if subsample is not None and subsample > 0:
@@ -273,6 +278,9 @@ def load_spair_data(path="data/SPair-71k", size=256, category='cat', split='test
     kps = torch.stack(kps)
     used_kps, = torch.where(kps[:, :, 2].any(dim=0))
     kps = kps[:, used_kps, :]
+
+    if return_pair_anno:
+        return files, kps, thresholds, used_kps, pairs
 
     return files, kps, thresholds, used_kps
 

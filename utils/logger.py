@@ -71,6 +71,19 @@ def log_weighted_pcks(args, logger, pcks, pcks_05, pcks_01, weights):
     
     return pck_010, pck_005, pck_001
 
+def log_weighted_pcks_test(args, logger, pcks, pcks_05, pcks_01, weights, divide=False):
+    """Logs weighted PCK statistics and returns PCK values."""
+    pck_010 = np.average(pcks, weights=weights)
+    pck_005 = np.average(pcks_05, weights=weights)
+    pck_001 = np.average(pcks_01, weights=weights)
+
+    if not args.KPT_RESULT and args.EVAL_DATASET == "spair" and not divide:  # Image result
+        logger.info(f"Weighted Per image PCK0.10: {pck_010 * 100:.2f}%, image PCK0.05: {pck_005 * 100:.2f}%, image PCK0.01: {pck_001 * 100:.2f}%")
+    else:
+        logger.info(f"Weighted Per kpt PCK0.10: {pck_010 * 100:.2f}%, kpt PCK0.05: {pck_005 * 100:.2f}%, kpt PCK0.01: {pck_001 * 100:.2f}")
+    
+    return pck_010, pck_005, pck_001
+
 
 def log_geo_stats(args, geo_aware, geo_aware_count, pcks_geo, pcks_geo_05, pcks_geo_01, weights_geo, weights_kpt, total_out_results):
     """
@@ -87,6 +100,30 @@ def log_geo_stats(args, geo_aware, geo_aware_count, pcks_geo, pcks_geo_05, pcks_
     logger.info(f"Average images geo-aware occurrence: {avg_geo_aware:.2f}%, Average points geo-aware occurrence: {avg_geo_aware_count:.2f}%")
     
     if not args.KPT_RESULT and args.TRAIN_DATASET == "spair":  # Image result
+        converted_total_results = convert_all_results(total_out_results) if args.EVAL_DATASET != "ap10k" else convert_all_results_ap10k(total_out_results)
+        avg_pck_geo_010, avg_pck_geo_005, avg_pck_geo_001 = get_img_result(converted_total_results, geo=True)[0].tolist()
+        logger.info(f"Weighted Per image geo-aware PCK0.10: {avg_pck_geo_010*100:.2f}%, image PCK0.05: {avg_pck_geo_005*100:.2f}%, image PCK0.01: {avg_pck_geo_001*100:.2f}%")
+    else:
+        avg_pck_geo_010 = np.average(pcks_geo, weights=weights_geo) * 100
+        avg_pck_geo_005 = np.average(pcks_geo_05, weights=weights_geo) * 100
+        avg_pck_geo_001 = np.average(pcks_geo_01, weights=weights_geo) * 100
+        logger.info(f"Weighted Per kpts geo-aware PCK0.10: {avg_pck_geo_010:.2f}%, kpts PCK0.05: {avg_pck_geo_005:.2f}%, kpts PCK0.01: {avg_pck_geo_001:.2f}%")
+    
+def log_geo_stats_test(args, geo_aware, geo_aware_count, pcks_geo, pcks_geo_05, pcks_geo_01, weights_geo, weights_kpt, total_out_results):
+    """
+    Log the geo-aware statistics.
+
+    Parameters:
+    - geo_aware, geo_aware_count: Lists to hold geo-aware counts.
+    - pcks_geo, pcks_geo_05, pcks_geo_01: Lists to hold geo-aware PCK scores at different thresholds.
+    - weights_geo: Weights for averaging the geo-aware PCK scores.
+    """
+    avg_geo_aware = np.average(geo_aware) * 100
+    avg_geo_aware_count = np.average(geo_aware_count, weights=weights_kpt) * 100
+
+    logger.info(f"Average images geo-aware occurrence: {avg_geo_aware:.2f}%, Average points geo-aware occurrence: {avg_geo_aware_count:.2f}%")
+    
+    if not args.KPT_RESULT and args.EVAL_DATASET == "spair":  # Image result
         converted_total_results = convert_all_results(total_out_results) if args.EVAL_DATASET != "ap10k" else convert_all_results_ap10k(total_out_results)
         avg_pck_geo_010, avg_pck_geo_005, avg_pck_geo_001 = get_img_result(converted_total_results, geo=True)[0].tolist()
         logger.info(f"Weighted Per image geo-aware PCK0.10: {avg_pck_geo_010*100:.2f}%, image PCK0.05: {avg_pck_geo_005*100:.2f}%, image PCK0.01: {avg_pck_geo_001*100:.2f}%")
