@@ -8,7 +8,7 @@ from typing import List, Tuple
 from matplotlib.patches import ConnectionPatch
 
 def draw_correspondences_gathered(points1: List[Tuple[float, float]], points2: List[Tuple[float, float]],
-                        image1: Image.Image, image2: Image.Image) -> plt.Figure:
+                        image1: Image.Image, image2: Image.Image, threshold=None) -> plt.Figure:
     """
     draw point correspondences on images.
     :param points1: a list of (y, x) coordinates of image1, corresponding to points2.
@@ -26,7 +26,8 @@ def draw_correspondences_gathered(points1: List[Tuple[float, float]], points2: L
         cmap = ListedColormap(["red", "yellow", "blue", "lime", "magenta", "indigo", "orange", "cyan", "darkgreen",
                             "maroon", "black", "white", "chocolate", "gray", "blueviolet"])
     colors = np.array([cmap(x) for x in range(num_points)])
-    radius1, radius2 = 0.03*max(image1.size), 0.01*max(image1.size)
+
+    radius1, radius2 = threshold[0,0].item(), 0.01*max(image1.size)
     
     # plot a subfigure put image1 in the top, image2 in the bottom
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
@@ -38,12 +39,12 @@ def draw_correspondences_gathered(points1: List[Tuple[float, float]], points2: L
 
     for point1, point2, color in zip(points1, points2, colors):
         y1, x1 = point1
-        circ1_1 = plt.Circle((x1, y1), radius1, facecolor=color, edgecolor='white', alpha=0.5)
+        circ1_1 = plt.Circle((x1, y1), radius1, facecolor=color, edgecolor='white', alpha=0.4)
         circ1_2 = plt.Circle((x1, y1), radius2, facecolor=color, edgecolor='white')
         ax1.add_patch(circ1_1)
         ax1.add_patch(circ1_2)
         y2, x2 = point2
-        circ2_1 = plt.Circle((x2, y2), radius1, facecolor=color, edgecolor='white', alpha=0.5)
+        circ2_1 = plt.Circle((x2, y2), radius1, facecolor=color, edgecolor='white', alpha=0.4)
         circ2_2 = plt.Circle((x2, y2), radius2, facecolor=color, edgecolor='white')
         ax2.add_patch(circ2_1)
         ax2.add_patch(circ2_2)
@@ -116,8 +117,12 @@ def draw_correspondences_lines(points1: List[Tuple[float, float]], points2: List
         cmap = ListedColormap(["red", "yellow", "blue", "lime", "magenta", "indigo", "orange", "cyan", "darkgreen",
                             "maroon", "black", "white", "chocolate", "gray", "blueviolet"])
     colors = np.array([cmap(x) for x in range(num_points)])
-    radius1, radius2 = 0.03*max(image1.size), 0.01*max(image1.size)
     
+    radius1, radius2 = 0.01*max(image1.size), threshold[0,0].item()
+    
+    #radius1, radius2 = threshold[0,0].item(), threshold[1,0].item() #pck indication
+    
+
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
     plt.subplots_adjust(wspace=0.025)
     ax1.axis('off')
@@ -129,18 +134,15 @@ def draw_correspondences_lines(points1: List[Tuple[float, float]], points2: List
     ax2.set_xlim(0, image2.size[0])
     ax2.set_ylim(image2.size[1], 0)
 
-    for i, (point1, point2) in enumerate(zip(points1, points2)):
+    for i, (point1, point2, gt_point) in enumerate(zip(points1, points2, gt_points2)):
         y1, x1 = point1
-        circ1_1 = plt.Circle((x1, y1), radius1, facecolor=colors[i], edgecolor='white', alpha=0.5)
+        circ1_1 = plt.Circle((x1, y1), radius1, facecolor=colors[i], edgecolor=colors[i])
         circ1_2 = plt.Circle((x1, y1), radius2, facecolor=colors[i], edgecolor='white')
-        ax1.add_patch(circ1_1)
-        ax1.add_patch(circ1_2)
         y2, x2 = point2
-        circ2_1 = plt.Circle((x2, y2), radius1, facecolor=colors[i], edgecolor='white', alpha=0.5)
+        circ2_1 = plt.Circle((x2, y2), radius1, facecolor=colors[i], edgecolor=colors[i])
         circ2_2 = plt.Circle((x2, y2), radius2, facecolor=colors[i], edgecolor='white')
-        ax2.add_patch(circ2_1)
-        ax2.add_patch(circ2_2)
-
+        y3, x3 = gt_point
+        circ3 = plt.Circle((x3, y3), radius2, facecolor='none', edgecolor=colors[i], linewidth=2)
         # Draw lines
         color = '#00FF00' if correct[i].item() else '#FF0000'
         if geo_idx is not None and i in geo_idx:
@@ -153,7 +155,17 @@ def draw_correspondences_lines(points1: List[Tuple[float, float]], points2: List
                 color = '#FFFF00'
         con = ConnectionPatch(xyA=(x2, y2), xyB=(x1, y1), coordsA="data", coordsB="data",
                               axesA=ax2, axesB=ax1, color=color, linewidth=4)
+        ax2.add_patch(circ3)
+        
         ax2.add_artist(con)
+
+        #ax1.add_patch(circ1_2)
+        ax1.add_patch(circ1_1)
+
+        ax2.add_patch(circ2_1)
+        #ax2.add_patch(circ2_2)
+
+
 
     return fig, bias
 
@@ -179,7 +191,7 @@ def save_visualization(thresholds, pair_idx, vis, save_path, category,
     """
     tmp_alpha = torch.tensor([0.1, 0.05, 0.01])
     if thresholds is not None:
-        tmp_bbox_size = thresholds[pair_idx].repeat(vis.sum()).cpu()
+        tmp_bbox_size = thresholds.repeat(vis.sum()).cpu()
         tmp_threshold = tmp_alpha.unsqueeze(-1) * tmp_bbox_size.unsqueeze(0)
     else:
         tmp_threshold = (tmp_alpha * anno_size).cpu().unsqueeze(-1).repeat(1, vis.sum())
@@ -196,7 +208,7 @@ def save_visualization(thresholds, pair_idx, vis, save_path, category,
         fig, _ = draw_correspondences_lines(img1_kps[vis][:, [1, 0]], kps_1_to_2[vis][:, [1, 0]], img2_kps[vis][:, [1, 0]], img1, img2, tmp_threshold, transparency=transparency)
         fig.savefig(os.path.join(category_path, f'{pair_idx}_pred.png'))
 
-    fig_gt = draw_correspondences_gathered(img1_kps[vis][:, [1, 0]], img2_kps[vis][:, [1, 0]], img1, img2)
+    fig_gt = draw_correspondences_gathered(img1_kps[vis][:, [1, 0]],  img2_kps[vis][:, [1, 0]], img1, img2,threshold=tmp_threshold)
     fig_gt.savefig(os.path.join(category_path, f'{pair_idx}_gt.png'))
     plt.close(fig)
     plt.close(fig_gt)

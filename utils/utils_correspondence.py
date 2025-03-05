@@ -363,7 +363,7 @@ def calculate_keypoint_transformation(args, img1_desc, img2_desc, img1_patch_idx
 
     if args.SOFT_EVAL:
         # Calculate flow if soft evaluation is enabled
-        flow = get_flow(sim_1_to_2, args.SOFT_EVAL_WINDOW)
+        flow = get_flow(sim_1_to_2, args.SOFT_EVAL_WINDOW, num_patches)
         flow_flatten = flow.reshape(-1, 2)
         flow_idxed = flow_flatten[img1_patch_idx]
         nn_y_patch, nn_x_patch = flow_idxed[:, 1].clamp(0, num_patches - 1), flow_idxed[:, 0].clamp(0, num_patches - 1)
