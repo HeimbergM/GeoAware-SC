@@ -73,9 +73,12 @@ def log_weighted_pcks(args, logger, pcks, pcks_05, pcks_01, weights):
 
 def log_weighted_pcks_test(args, logger, pcks, pcks_05, pcks_01, weights, divide=False):
     """Logs weighted PCK statistics and returns PCK values."""
-    pck_010 = np.average(pcks, weights=weights)
-    pck_005 = np.average(pcks_05, weights=weights)
-    pck_001 = np.average(pcks_01, weights=weights)
+    if len(pcks):
+        pck_010 = np.average(pcks, weights=weights)
+        pck_005 = np.average(pcks_05, weights=weights)
+        pck_001 = np.average(pcks_01, weights=weights)
+    else:
+        pck_010, pck_005, pck_001 = np.NaN, np.NaN, np.NaN
 
     if not args.KPT_RESULT and args.EVAL_DATASET == "spair" and not divide:  # Image result
         logger.info(f"Weighted Per image PCK0.10: {pck_010 * 100:.2f}%, image PCK0.05: {pck_005 * 100:.2f}%, image PCK0.01: {pck_001 * 100:.2f}%")

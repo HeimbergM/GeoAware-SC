@@ -119,7 +119,7 @@ def load_eval_data(args, path, category, split):
     elif args.EVAL_DATASET == 'pascal':
         files, kps, thresholds, used_kps = load_pascal_data(path, args.ANNO_SIZE, category, split, args.TEST_SAMPLE)
     else:
-        if args.DIVIDE_RESULTS:
+        if hasattr(args, "DIVIDE_RESULTS") and args.DIVIDE_RESULTS:
             files, kps, thresholds, used_kps, pairs = load_spair_data(path, args.ANNO_SIZE, category, split, args.TEST_SAMPLE, args.DIVIDE_RESULTS)
             return files, kps, thresholds, used_kps, pairs
         else:
